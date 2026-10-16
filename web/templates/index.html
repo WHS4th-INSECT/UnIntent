@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>UnIntent Lab</title>
+    <meta
+      name="description"
+      content="Intent 정적분석, 동적분석, 최종 결합 결과를 탐색하는 로컬 대시보드"
+    />
+    <meta name="theme-color" content="#f7f7f5" />
+    <script>
+      (() => {
+        const savedTheme = localStorage.getItem("intent-flow-theme");
+        const theme = savedTheme === "light" || savedTheme === "dark"
+          ? savedTheme
+          : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/lab.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('xterm_asset', filename='css/xterm.css') }}" />
+  </head>
+  <body>
+    <div class="shell" id="app-shell" data-active-page="static">
+      <header class="topbar">
+        <div class="breadcrumbs" aria-label="현재 위치">
+          <span>Projects</span>
+          <i>/</i>
+          <strong id="topbar-page-name">정적분석 결과</strong>
+        </div>
+      </header>
+
+      <nav class="primary-nav" aria-label="분석 결과 페이지">
+        <div class="sidebar-brand">
+          <div class="brand-mark" aria-hidden="true">U</div>
+          <div class="brand-copy">
+            <strong>UnIntent Lab</strong>
+            <span>Analysis workspace</span>
+          </div>
+        </div>
+
+        <div class="nav-section-label">WORKSPACE</div><button class="page-nav" data-page="overview" aria-label="Overview" title="Overview"><span class="page-nav-icon">⌂</span><span class="page-nav-copy"><strong>Overview</strong></span></button><button class="page-nav" data-page="projects" aria-label="Projects" title="Projects"><span class="page-nav-icon">◇</span><span class="page-nav-copy"><strong>Projects</strong><small>JSON workspaces</small></span><b id="nav-project-count">—</b></button><button class="page-nav" data-page="analyze" aria-label="Analyze" title="Analyze"><span class="page-nav-icon">⌘</span><span class="page-nav-copy"><strong>Analyze</strong></span></button><button class="page-nav" data-page="reports" aria-label="Reports" title="Reports"><span class="page-nav-icon">▤</span><span class="page-nav-copy"><strong>Reports</strong></span></button><div class="nav-section-label">PROJECT ANALYSIS</div>
+        <button class="page-nav active" data-page="static" aria-label="정적분석 결과">
+          <span class="page-nav-icon static-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2"></circle><circle cx="19" cy="5" r="2"></circle><circle cx="19" cy="19" r="2"></circle><path d="m7 11 10-5M7 13l10 5"></path></svg>
+          </span>
+          <span class="page-nav-copy">
+            <strong>정적분석 결과</strong>
+            <small>Flow candidates</small>
+          </span>
+          <b id="nav-static-count">—</b>
+        </button>
+        <button class="page-nav" data-page="dynamic" aria-label="동적분석 결과">
+          <span class="page-nav-icon dynamic-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8M9 2v4m6-4v4M7 8h10v12H7z"></path><path d="m10 13 2 2 3-4"></path></svg>
+          </span>
+          <span class="page-nav-copy">
+            <strong>동적분석 결과</strong>
+            <small>ADB executions</small>
+          </span>
+          <b id="nav-dynamic-count">—</b>
+        </button>
+        <div class="nav-flow-guide">
+          <span>PIPELINE</span>
+          <div><i class="guide-dot cyan"></i>정적 후보</div>
+          <div><i class="guide-line"></i></div>
+          <div><i class="guide-dot blue"></i>ADB 검증</div>
+          <div><i class="guide-line"></i></div>
+          <div><i class="guide-dot green"></i>분석가 판정</div>
+        </div>
+
+        <div class="sidebar-footer">
+          <div class="theme-control" role="group" aria-label="화면 테마">
+            <button type="button" data-theme-choice="light" aria-pressed="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.5"></circle><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+              <span>White</span>
+            </button>
+            <button type="button" data-theme-choice="dark" aria-pressed="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.2A8.5 8.5 0 0 1 8.8 3.8 8.5 8.5 0 1 0 20.2 15.2z"></path></svg>
+              <span>Black</span>
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <aside class="sidebar static-page-region" id="static-sidebar">
+        <section class="package-card">
+          <span class="eyebrow">ANALYSIS TARGET</span>
+          <h1 id="package-name">Loading…</h1>
+        </section>
+
+        <section class="filter-panel">
+          <div class="filter-row" role="group" aria-label="취약점 종류 필터">
+            <button class="filter-chip active" data-filter="">All</button>
+            <button class="filter-chip" data-filter="redirection">Redirection</button>
+            <button class="filter-chip" data-filter="injection">Injection</button>
+            <button class="filter-chip" data-filter="spoofing">Spoofing</button>
+          </div>
+          <div class="filter-row" role="group" aria-label="근거 단계 필터">
+            <button class="class-filter-chip" data-class-filter="confirmed">confirmed</button>
+            <button class="class-filter-chip active" data-class-filter="">All</button>
+            <button class="class-filter-chip" data-class-filter="non_prooved">non-prooved</button>
+          </div>
+        </section>
+
+        <div class="list-heading">
+          <span>INTENT FLOW GRAPHS</span>
+          <span id="graph-count">0</span>
+        </div>
+        <div class="graph-list" id="graph-list" aria-live="polite"></div>
+      </aside>
+
+      <main class="workspace static-page-region" id="static-workspace">
+        <div class="workspace-head">
+          <div>
+            <div class="crumb">FLOW GRAPH / <span id="graph-short-id">—</span></div>
+            <h2 id="graph-title">분석할 graph를 선택하세요</h2>
+            <div class="type-badges" id="type-badges"></div>
+          </div>
+          <div class="graph-metrics" id="graph-metrics"></div>
+        </div>
+
+        <div class="toolbar" aria-label="그래프 도구">
+          <label class="path-select-wrap">
+            <span>Path</span>
+            <select id="path-select">
+              <option value="all">All paths</option>
+            </select>
+          </label>
+          <button id="fit-button" title="그래프를 화면에 맞춤">Fit</button>
+          <button id="zoom-in" title="확대">＋</button>
+          <button id="zoom-out" title="축소">−</button>
+          <label class="toggle-control">
+            <input id="approx-toggle" type="checkbox" checked />
+            <span>Approximate edges</span>
+          </label>
+        </div>
+
+        <div class="graph-stage" id="graph-stage">
+          <svg id="graph-svg" role="img" aria-label="정적분석 flow graph">
+            <defs>
+              <marker id="arrow-direct" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,6 L9,3 z" fill="#63758b"></path>
+              </marker>
+              <marker id="arrow-approx" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,6 L9,3 z" fill="#8a739f"></path>
+              </marker>
+            </defs>
+            <g id="viewport-layer">
+              <g id="edge-layer"></g>
+              <g id="node-layer"></g>
+            </g>
+          </svg>
+          <div class="empty-state" id="empty-state">
+            <div class="empty-orbit"><span></span></div>
+            <h3>Flow를 불러오는 중입니다</h3>
+            <p>entry point부터 source와 sink까지의 정적 후보를 펼칩니다.</p>
+          </div>
+        </div>
+
+        <div class="legend-bar">
+          <span><i class="legend-dot entry_point"></i>Entry point</span>
+          <span><i class="legend-dot component"></i>Component</span>
+          <span><i class="legend-dot source"></i>Source</span>
+          <span><i class="legend-dot method"></i>Method / State</span>
+          <span><i class="legend-dot sink"></i>Sink</span>
+          <span class="legend-spacer"></span>
+          <span><i class="legend-line direct"></i>Direct</span>
+          <span><i class="legend-line approximate"></i>Approximate</span>
+        </div>
+      </main>
+
+      <aside class="inspector static-page-region" id="static-inspector">
+        <div class="inspector-head">
+          <span class="eyebrow">INSPECTOR</span>
+          <span class="node-id" id="inspector-id">NO SELECTION</span>
+        </div>
+        <div id="inspector-content" class="inspector-content">
+          <div class="inspector-empty">
+            <div class="inspect-icon">◎</div>
+            <p>노드를 선택하면 메서드, 컴포넌트, key, 근거를 확인할 수 있습니다.</p>
+          </div>
+        </div>
+      </aside>
+
+
+      <main class="page-panel lab-page" id="projects-page" hidden>
+        <header class="lab-heading project-heading">
+          <div><p class="eyebrow">WORKSPACE</p><h1>Projects</h1><p class="lab-muted">분석할 APK 프로젝트를 선택하세요.</p></div>
+          <label class="project-search"><span aria-hidden="true">⌕</span><input id="project-search" type="search" placeholder="APK 이름 검색" aria-label="APK 이름 검색" /></label>
+        </header>
+        <section class="lab-box project-list" aria-label="APK 프로젝트 목록">
+          <div class="project-list-head"><span>No.</span><span>APK name</span><span>Action</span></div>
+          <div id="project-list-body"><div class="project-loading">프로젝트를 불러오는 중입니다.</div></div>
+        </section>
+        <footer class="project-list-footer"><span id="project-source-label">JSON projects</span><nav id="project-pagination" aria-label="프로젝트 페이지"></nav></footer>
+      </main>
+
+      <main class="page-panel lab-page" id="overview-page" hidden>
+        <header class="lab-heading"><div><p class="eyebrow">PROJECT OVERVIEW</p><h1 id="lab-project">프로젝트를 불러오는 중…</h1><p id="lab-package" class="lab-muted">분석 결과를 확인하고 실행 근거를 탐색하세요.</p></div><button class="lab-button primary" data-open-page="analyze">⌘ Analyze workspace</button></header>
+        <div id="lab-error" role="alert" hidden></div>
+        <section class="lab-cards" id="lab-cards" aria-label="분석 요약"></section>
+        <section class="lab-box"><div class="lab-box-head"><div class="lab-tabs"><button class="selected" data-open-page="static">Static analysis ↗</button><button data-open-page="dynamic">Dynamic analysis ↗</button></div></div><p class="lab-notice">정적 흐름과 동적 실행 결과는 각각의 분석 화면에서 확인할 수 있습니다.</p></section>
+        <p class="lab-muted">정적 분석 → 동적 분석</p>
+      </main>
+      <main class="page-panel lab-page" id="analyze-page" hidden>
+        <header class="lab-heading"><div><p class="eyebrow">LOCAL WORKSPACE</p><h1>Analyze</h1></div><span class="lab-status" id="runtime-status">환경 확인 중</span></header>
+        <div class="lab-workbench">
+          <section class="lab-box emulator-panel">
+            <div class="emulator-controls">
+              <label><span>AVD</span><select id="avd-select"><option value="">AVD를 불러오는 중…</option></select></label>
+              <button class="lab-button primary" id="avd-start" type="button">▶ Start</button>
+              <button class="lab-button" id="avd-stop" type="button" disabled>Stop</button>
+            </div>
+            <div class="device-frame" id="device-frame">
+              <canvas id="device-screen" aria-label="Android emulator live screen" tabindex="0" width="576" height="1280" hidden></canvas>
+              <div class="lab-device-empty" id="device-empty">
+                <span class="lab-device-icon">▯</span>
+                <h2 id="device-empty-title">연결된 에뮬레이터 없음</h2>
+                <p class="lab-muted" id="device-empty-message">AVD를 선택해 시작하거나 실행 중인 기기를 새로고침하세요.</p>
+              </div>
+            </div>
+          </section>
+          <div class="lab-tools">
+            <section class="lab-box terminal-panel">
+              <div class="lab-box-head runtime-toolbar">
+                <div><b>Local Terminal</b><small id="terminal-shell-label">세션 준비</small></div>
+                <div class="terminal-actions">
+                  <button class="lab-button compact" id="terminal-interrupt" type="button" disabled>Ctrl+C</button>
+                  <button class="lab-button compact" id="terminal-clear" type="button">Clear</button>
+                  <button class="lab-button primary compact" id="terminal-start" type="button">Start shell</button>
+                </div>
+              </div>
+              <div class="terminal-console" id="terminal-console">
+                <div id="xterm-terminal" aria-label="로컬 터미널"></div>
+              </div>
+            </section>
+            <section class="lab-box lab-info payload-panel">
+              <p class="eyebrow payload-title">payload</p>
+              <p class="lab-muted">예시 명령을 복사한 뒤 패키지명·Activity·키·값을 대상 앱에 맞게 바꾸세요.</p>
+              <div class="payload-list" tabindex="0" aria-label="예시 페이로드 목록">
+              <div class="payload-example">
+                <div class="payload-example-head"><span>문자열 extra</span><button class="lab-button compact" type="button" data-copy-payload="payload-string">복사</button></div>
+                <textarea id="payload-string" class="payload-command" rows="1" wrap="off" readonly spellcheck="false" aria-label="문자열 extra 예시 명령">adb shell am start -n packagename/.Activity --es key_name '{value}'</textarea>
+              </div>
+              <div class="payload-example">
+                <div class="payload-example-head"><span>URL extra</span><button class="lab-button compact" type="button" data-copy-payload="payload-url">복사</button></div>
+                <textarea id="payload-url" class="payload-command" rows="1" wrap="off" readonly spellcheck="false" aria-label="URL extra 예시 명령">adb shell am start -n packagename/.Activity --es url 'https://example.com'</textarea>
+              </div>
+              <div class="payload-example">
+                <div class="payload-example-head"><span>Boolean · 정수 extra</span><button class="lab-button compact" type="button" data-copy-payload="payload-typed">복사</button></div>
+                <textarea id="payload-typed" class="payload-command" rows="1" wrap="off" readonly spellcheck="false" aria-label="Boolean 정수 extra 예시 명령">adb shell am start -n packagename/.Activity --ez boolean_key true --ei integer_key 1</textarea>
+              </div>
+              </div>
+              <span class="payload-copy-status" role="status" aria-live="polite"></span>
+            </section>
+          </div>
+        </div>
+      </main>
+      <main class="page-panel lab-page" id="reports-page" hidden>
+        <header class="lab-heading"><div><p class="eyebrow">DOCUMENTS</p><h1>Reports</h1><p class="lab-muted">프로젝트별 최종 분석 보고서를 관리합니다.</p></div><button class="lab-button primary" disabled>＋ Generate report</button></header>
+        <section class="lab-box"><div class="lab-box-head"><b>Project reports</b><span class="lab-status">준비 중</span></div><div class="lab-device-empty"><span class="lab-document-icon">▤</span><h2>아직 생성된 보고서가 없습니다</h2><p class="lab-muted">보고서 생성, 미리보기, 다운로드는 백엔드 구현 후 제공됩니다.</p></div></section>
+      </main>
+      <main class="page-panel" id="dynamic-page" hidden>
+        <section class="dynamic-workspace">
+          <section class="dynamic-column dynamic-flow-column">
+            <section class="package-card">
+              <span class="eyebrow">ANALYSIS TARGET</span>
+              <h1 id="dynamic-package-name">Loading…</h1>
+            </section>
+            <header class="dynamic-column-header">
+              <h2>FLOWS</h2>
+              <div class="dynamic-flow-tools">
+                <button type="button" data-flow-filter="success" aria-pressed="false">Success</button>
+                <button type="button" data-flow-filter="failure" aria-pressed="false">Fail</button>
+                <b id="dynamic-flow-count">0</b>
+              </div>
+            </header>
+            <div class="dynamic-flow-list" id="dynamic-flow-list"></div>
+          </section>
+          <section class="dynamic-column dynamic-payload-column">
+            <header class="dynamic-column-header"><h2 id="dynamic-payload-title">PAYLOADS</h2></header>
+            <div class="dynamic-payload-list" id="dynamic-payload-list">
+              <div class="dynamic-empty">플로우를 선택하세요.</div>
+            </div>
+          </section>
+          <article class="dynamic-column dynamic-detail-column" id="dynamic-detail">
+            <header class="dynamic-column-header"><h2>PAYLOAD DETAIL</h2></header>
+            <div class="dynamic-empty">페이로드를 선택하세요.</div>
+          </article>
+        </section>
+      </main>
+
+    </div>
+
+    <script src="{{ url_for('static', filename='js/theme.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/navigation.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}" defer></script>
+    <script src="{{ url_for('xterm_asset', filename='lib/xterm.js') }}" defer></script>
+    <script src="{{ url_for('xterm_fit_asset', filename='lib/addon-fit.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/device_stream.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/runtime.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/payload.js') }}" defer></script>
+  </body>
+</html>

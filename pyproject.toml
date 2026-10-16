@@ -1,0 +1,27 @@
+[dependency-groups]
+runtime = [
+    "androguard==4.1.4",
+    "httpx>=0.27.0",
+    "mcp>=2,<3",
+    "psutil>=5.9",
+    "z3-solver==5.1.0.0",
+    "python-dotenv>=1.0",
+]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+indent-width = 4
+
+[tool.ruff.lint]
+extend-select = [
+    "I",   # import 정렬
+    "B",   # 버그 가능성이 있는 코드 검사
+    "UP",  # 최신 Python 문법 사용
+    "SIM", # 불필요하게 복잡한 코드 단순화
+]
+
+[tool.ruff.format]
+indent-style = "space"
+quote-style = "double"
+line-ending = "lf"
