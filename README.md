@@ -2,23 +2,23 @@
 
 ## 📖 프로젝트 소개
 
-UnIntent는 KISA Whitehat School 4th 2단계 프로젝트에서 개발한 안드로이드 앱 인텐트 취약점 분석 도구입니다. 정적 분석과 동적 검증을 통해 **Intent Redirection**, **Intent Injection**, **Intent Spoofing** 세 유형의 취약점을 탐지합니다.
+UnIntent는 KISA Whitehat School 4th 2단계 프로젝트에서 개발한 Android 앱 인텐트 취약점 분석 도구입니다. 정적 분석과 동적 검증을 통해 **Intent Redirection**, **Intent Injection**, **Intent Spoofing** 세 유형의 취약점을 탐지합니다.
 
 ### 분석 흐름
 
 ![로컬 APK 또는 Play Store에서 정적 분석과 기기 동적 검증을 거쳐 웹 대시보드에서 결과를 확인하는 흐름](docs/analysis-flow.png)
 
-정적 분석 결과는 `static.json`에, 동적 검증 결과는 `dynamic.json`에 저장됩니다. 동적 검증은 정적 분석이 성공하면 진행합니다.
+정적 분석 결과는 `static.json`에, 동적 검증 결과는 `dynamic.json`에 각각 저장됩니다. 동적 검증은 정적 분석이 성공적으로 완료된 경우에만 수행됩니다.
 
 ### 실행 방식
 
-| 시작 방법 | 필요한 것 |
+| 시작 방법 | 필요 환경 및 준비 사항 |
 | --- | --- |
-| 📁 로컬 APK 분석 | APK 파일, ADB로 연결된 안드로이드 에뮬레이터 또는 실기기 |
-| 📥 패키지명으로 추출 후 분석 | 패키지명 목록, Google Play가 설치된 기기 |
-| 🔝 Google Play Top 100 앱 분석 | Google Play가 설치된 기기 |
+| 📁 로컬 APK 분석 | APK 파일, ADB로 연결된 Android 에뮬레이터 또는 실기기 |
+| 📥 패키지명 기반 APK 추출 및 분석 | 패키지명 목록, Google Play가 설치된 Android 기기 |
+| 🔝 Google Play Top 100 앱 분석 | Google Play가 설치된 Android기기 |
 
-> **기기 연결:** 에뮬레이터 또는 USB 디버깅을 허용한 실기기를 사용할 수 있습니다. 분석을 시작하기 전에 `adb devices`에서 상태가 `device`인 기기 한 대를 확인하세요. 특히 `-d`와 `-t`를 사용할 때는 기기를 자동으로 선택할 수 있도록 한 대만 연결해야 합니다.
+> **기기 연결:** 에뮬레이터 또는 USB 디버깅을 허용한 실기기를 사용할 수 있습니다. 분석을 시작하기 전에 `adb devices` 명령어를 실행하여 기기 한 대가 `device` 상태로 연결되어 있는지 확인하세요. 특히 `-d` 및 `-t` 옵션을 사용하는 경우, 기기가 자동으로 선택될 수 있도록 한 대의 기기만 연결해야 합니다.
 
 ---
 
@@ -65,13 +65,20 @@ python src/UnIntent.py
 | Google Play가 설치된 기기 | 앱을 설치하고 기기에서 APK 추출 | `-d`, `-t` 사용 시 |
 | Node.js와 npm | 웹 대시보드의 프런트엔드 의존성 설치 | 대시보드 사용 시 |
 
-**ADB 설치:** `adb`가 없다면 Android SDK Platform-Tools를 설치하고, `adb` 실행 파일이 있는 디렉터리를 `PATH`에 추가하세요. 에뮬레이터를 사용한다면 Android Studio에서 AVD를 만들고 실행합니다. 실기기를 사용한다면 개발자 옵션에서 **USB 디버깅**을 켜고 컴퓨터의 디버깅 요청을 허용합니다. 에뮬레이터를 명령줄에서 시작하려면 `emulator` 실행 파일도 `PATH`에서 찾을 수 있어야 합니다.
+**ADB 설치 및 기기 설정:** `adb`가 설치되어 있지 않은 경우, Android SDK Platform-Tools를 설치하고 `adb` 실행 파일이 위치한 디렉터리를 환경 변수 `PATH`에 추가하세요.
+
+- **에뮬레이터 사용 시:** Android Studio에서 AVD(Android Virtual Device)를 생성하고 실행하세요. 명령줄에서 에뮬레이터를 실행하려면 `emulator` 실행 파일이 위치한 디렉터리도 `PATH`에 추가해야 합니다.
+- **실기기 사용 시:** 개발자 옵션에서 **USB 디버깅**을 활성화하고, 기기를 컴퓨터에 연결한 후 디버깅 권한 요청을 허용하세요.
 
 <a id="python-setup"></a>
 
 ### Python 및 의존성 설치
 
-Python이 없다면 먼저 설치하세요. 아래 명령은 Python 자체를 설치하는 과정이 아니라 가상환경을 만들고 프로젝트 의존성을 설치하는 과정입니다. CLI, 대시보드, MCP 서버를 소스에서 실행하려면 Python과 `requirements.txt`의 패키지가 필요합니다. 가상환경은 선택 사항이지만 사용을 권장합니다.
+CLI, 대시보드, MCP 서버를 소스 코드에서 실행하려면 Python과 `requirements.txt`에 명시된 의존성 패키지가 필요합니다.
+
+Python이 설치되어 있지 않다면 먼저 설치하세요. 아래 명령어는 Python 자체를 설치하는 것이 아니라, 가상환경을 생성하고 프로젝트에 필요한 의존성 패키지를 설치하는 과정입니다.
+
+가상환경 사용은 필수는 아니지만, 프로젝트별 의존성을 독립적으로 관리할 수 있으므로 사용을 권장합니다.
 
 프로젝트 루트에서 운영체제에 맞는 명령을 실행합니다.
 
@@ -91,7 +98,7 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-이후의 `python` 명령은 활성화한 가상환경에서 실행합니다. 새 터미널을 열었다면 가상환경을 다시 활성화하세요. 가상환경을 사용하지 않는 경우에도 필요한 패키지는 설치해야 합니다.
+이후의 `python` 명령은 활성화한 가상환경에서 실행합니다. 새 터미널을 열었다면 가상환경을 다시 활성화하세요. 가상환경을 사용하지 않는 경우에도 프로젝트 실행에 필요한 의존성 패키지는 별도로 설치해야 합니다.
 
 ### ADB 연결 확인
 
@@ -107,35 +114,39 @@ adb devices
 
 ## ⌨️ CLI 사용법
 
-모든 명령은 **프로젝트 루트**에서 실행합니다. 기본 실행은 `data/apks/targets/` 안의 `*.apk` 파일을 분석합니다.
+모든 명령은 **프로젝트 루트 디렉터리**에서 실행합니다. 기본적으로 data/apks/targets/ 디렉터리에 있는 APK 파일을 분석하며, 실행 옵션을 통해 분석 대상과 설정을 변경할 수 있습니다.
 
-| 목적 | 명령 | 입력 |
+| 목적 | 명령어 | 입력 및 설정 |
 | --- | --- | --- |
 | 도움말 보기 | `python src/UnIntent.py --help` | 없음 |
 | 📁 로컬 APK 분석 | `python src/UnIntent.py` | `data/apks/targets/*.apk` |
 | 📥 패키지명 목록의 앱 분석 | `python src/UnIntent.py -d` | `data/apks/target.txt` |
-| 🔝 Google Play Top 100 앱 분석 | `python src/UnIntent.py -t` | Google Play 목록 |
-| 정적 분석 시간 제한 설정 | `python src/UnIntent.py --time-out 120` | 120초로 설정; 기본값은 제한 없음 |
-| 최대 호출 깊이 설정 | `python src/UnIntent.py --depth 5` | 기본값 10 (1부터 설정 가능) |
+| 🔝 Google Play Top 100 앱 분석 | `python src/UnIntent.py -t` | Google Play Top 100 목록 |
+| 정적 분석 시간 제한 설정 | `python src/UnIntent.py --time-out 120` | 120초 (기본값은 제한 없음) |
+| 최대 호출 깊이 설정 | `python src/UnIntent.py --depth 5` | 5 (기본값: 10, 최솟값: 1) |
 
-`--time-out`과 `--depth`는 위 분석 방식과 함께 사용할 수 있습니다. `-d`와 `-t`는 동시에 사용할 수 없습니다.
+`--time-out`과 `--depth` 옵션은 각 분석 방식과 함께 사용할 수 있습니다. 단, `-d`와 `-t`는 동시에 사용할 수 없습니다.
 
 ### 로컬 APK 분석
 
-`data/apks/targets/`에 APK 파일을 넣고 `python src/UnIntent.py`를 실행합니다. 정적 분석이 성공하면 연결된 에뮬레이터 또는 실기기에서 동적 검증을 진행합니다.
+분석할 APK 파일을 `data/apks/targets/` 디렉터리에 배치한 후 다음 명령어를 실행합니다.
+
+`python src/UnIntent.py`
+
+정적 분석이 성공적으로 완료되면 연결된 Android 에뮬레이터 또는 실기기에서 동적 검증을 진행합니다.
 
 ### 패키지명으로 앱 분석하기
 
-프로젝트 루트의 `data/apks/target.txt`에 **한 줄에 패키지명 하나씩** 입력합니다.
+프로젝트 루트의 `data/apks/target.txt`에 분석할 앱의 패키지명을 **한 줄에 하나씩** 입력합니다.
 
 ```text
 com.example.app
 com.example.otherapp
 ```
 
-그다음 `python src/UnIntent.py -d`를 실행합니다. 설치된 앱은 기기에서 APK를 추출하고, 설치되지 않은 앱은 Google Play에서 설치한 뒤 APK를 추출해 분석합니다. `-t`는 Google Play Top 100 패키지 목록에 같은 과정을 적용합니다.
+패키지명 목록을 작성한 후 `python src/UnIntent.py -d`를 실행합니다. 기기에 이미 설치된 앱은 APK를 직접 추출하며, 설치되지 않은 앱은 Google Play에서 설치한 후 APK를 추출하여 분석합니다. Google Play Top 100 앱을 분석하려면 -t 옵션을 사용합니다. 해당 옵션은 Top 100 패키지명 목록을 대상으로 동일한 분석 과정을 수행합니다.
 
-분석 결과는 `data/results/<패키지명>/static.json`과 `data/results/<패키지명>/dynamic.json`에 저장됩니다. 정적 분석에 실패하면 동적 검증은 실행되지 않습니다.
+분석 결과는 `data/results/<패키지명>/static.json`과 `data/results/<패키지명>/dynamic.json`에 저장됩니다. 정적 분석에 실패한 경우에는 동적 검증을 수행하지 않습니다.
 
 ---
 
@@ -143,7 +154,7 @@ com.example.otherapp
 
 ## 🖥️ 웹 대시보드
 
-앞서 Python 의존성을 설치한 뒤 Node.js와 npm도 설치합니다. 프로젝트 루트에서 다음 명령을 실행하세요.
+웹 대시보드를 실행하려면 앞서 안내한 Python 의존성 외에 Node.js와 npm이 필요합니다. 두 도구를 설치한 후 프로젝트 루트 디렉터리에서 다음 명령어를 실행합니다.
 
 ```bash
 cd web
@@ -151,7 +162,11 @@ npm ci
 python app.py
 ```
 
-브라우저에서 http://127.0.0.1:5056을 엽니다. 대시보드는 `data/results/<패키지명>/`에 저장된 분석 결과를 보여줍니다. 등록된 AVD가 있으면 `app.py`가 첫 번째 AVD의 실행을 시도합니다.
+서버가 실행되면 브라우저에서 아래 주소로 접속합니다.
+
+http://127.0.0.1:5056
+
+웹 대시보드는 `data/results/<패키지명>/`에 저장된 정적 분석 및 동적 검증 결과를 시각화하여 제공합니다. 등록된 Android Virtual Device(AVD)가 있는 경우, `app.py`는 첫 번째 AVD의 실행을 시도합니다.
 
 ---
 
@@ -159,12 +174,14 @@ python app.py
 
 ## 🔔 선택 사항: Discord 알림
 
-프로젝트 루트에 `.env` 파일을 만들고 Discord Webhook URL과 분석가 이름을 설정합니다. 설정하지 않아도 분석은 실행됩니다.
+Discord 알림 기능을 사용하려면 프로젝트 루트 디렉터리에 `.env` 파일을 생성하고, Discord Webhook URL과 분석가 이름을 설정합니다.
 
 ```dotenv
 DISCORD_WEBHOOK_URL="Discord Webhook URL"
 ANALYST_NAME="분석가 이름"
 ```
+
+ Discord 알림은 선택 기능으로, 설정하지 않아도 분석 기능은 정상적으로 실행됩니다.
 
 ---
 
@@ -172,7 +189,11 @@ ANALYST_NAME="분석가 이름"
 
 ## 🔌 MCP 서버 연결
 
-UnIntent MCP 서버를 사용하려면 `mcp_server/server.py`를 **프로젝트 가상환경의 Python**으로 실행합니다. 먼저 [Python 및 의존성 설치](#python-setup)를 완료하세요. Codex 앱과 Codex CLI는 MCP 설정을 공유하므로 둘 중 한 곳에서만 등록하면 됩니다.
+UnIntent MCP 서버를 사용하려면 `mcp_server/server.py`를 **프로젝트 가상환경의 Python**으로 실행합니다. 
+
+MCP 서버를 연결하기 전에 [Python 및 의존성 설치](#python-setup)를 완료하세요. 
+
+Codex 앱과 Codex CLI는 MCP 설정을 공유하므로 둘 중 한 곳에서만 등록하면 됩니다.
 
 ### Codex 데스크톱 앱 (GUI)
 
@@ -188,7 +209,11 @@ UnIntent MCP 서버를 사용하려면 `mcp_server/server.py`를 **프로젝트 
 
 `analyze_apk`는 서버의 작업 폴더 최상위에 있는 APK 파일 **하나**를 찾습니다. 다른 폴더를 사용한다면 `~/.codex/config.toml`의 `[mcp_servers.unintent]`에 `cwd`를 그 폴더의 절대 경로로 설정하거나 `UNINTENT_WORKSPACE` 환경 변수를 지정하세요.
 
-### Claude Desktop (GUI)
+### Claude 데스크톱 앱 (GUI)
+
+> [!WARNING]
+> Claude Desktop의 MCP 요청 제한 시간은 기본 60초이며, 사용자가 변경할 수 없습니다. 
+> UnIntent의 분석이 이 시간을 초과하면 시간 초과 오류가 발생할 수 있으므로, Claude Desktop보다는 CLI 환경에서 사용하는 것을 권장합니다.
 
 Claude Desktop 앱의 **Settings → Developer → Edit Config**에서 `claude_desktop_config.json`을 엽니다. Windows에서는 `%APPDATA%\Claude\claude_desktop_config.json`, macOS에서는 `~/Library/Application Support/Claude/claude_desktop_config.json`에 있습니다.
 
@@ -250,7 +275,7 @@ claude mcp add --transport stdio --scope user unintent -- "$python_path" "$serve
 
 | 도구 | 사용 방법 |
 | --- | --- |
-| `analyze_apk` | 현재 작업 폴더의 최상위에 APK 파일 **하나**를 두고 분석합니다. |
+| `analyze_apk` | 현재 작업 폴더의 최상위에 APK 파일 **하나**를 분석합니다. |
 | `analyze_app(package_name)` | 패키지명으로 앱의 APK를 추출해 분석합니다. 앱이 설치되지 않았다면 기기의 Google Play에서 먼저 설치합니다. |
 | `get_analysis_seeds`, `get_flow` | 분석 후보 목록과 개별 흐름의 근거를 확인합니다. |
 
